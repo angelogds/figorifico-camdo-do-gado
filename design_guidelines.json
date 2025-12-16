@@ -1,0 +1,177 @@
+{
+  "design_system": {
+    "identity": {
+      "name": "RecycleFlow OS",
+      "metaphor": "Mission Control for Matter",
+      "personality": "Precision, Robustness, Clarity",
+      "principles": [
+        "Information at a Glance: Status must be readable from 3 meters away",
+        "Touch-First: Buttons are targets, not text. Minimum height 48px",
+        "Dark Mode Default: Optimized for dim control rooms",
+        "Color is Meaning: Never use color for decoration, only for status"
+      ]
+    },
+    "typography": {
+      "fonts": {
+        "headings": {
+          "family": "Chivo, sans-serif",
+          "weights": ["700", "900"],
+          "usage": "Page titles, Digester IDs, Critical Alerts"
+        },
+        "body": {
+          "family": "Inter, sans-serif",
+          "weights": ["400", "500"],
+          "usage": "Labels, instructions, table data"
+        },
+        "mono": {
+          "family": "JetBrains Mono, monospace",
+          "weights": ["500"],
+          "usage": "Timers, Weights (kg/ton), Sensor Data, IDs"
+        }
+      },
+      "scale": {
+        "h1": "text-4xl md:text-5xl font-black tracking-tight",
+        "h2": "text-3xl font-bold tracking-tight",
+        "h3": "text-xl font-bold uppercase tracking-widest",
+        "metric_huge": "text-6xl font-mono font-medium tracking-tighter",
+        "metric_large": "text-4xl font-mono font-medium",
+        "label": "text-xs font-bold uppercase text-muted-foreground tracking-wider"
+      }
+    },
+    "colors": {
+      "palette": {
+        "primary": {
+          "light": "#0F172A",
+          "dark": "#F8FAFC",
+          "description": "Slate 900 for brand elements"
+        },
+        "background": {
+          "light": "#F1F5F9",
+          "dark": "#020617",
+          "description": "Slate 100 (Light) vs Slate 950 (Dark)"
+        },
+        "surface": {
+          "light": "#FFFFFF",
+          "dark": "#0F172A",
+          "description": "Pure White vs Slate 900"
+        },
+        "status": {
+          "operational": "#10B981",
+          "warning": "#F59E0B",
+          "critical": "#EF4444",
+          "neutral": "#64748B"
+        }
+      },
+      "usage_rules": [
+        "NEVER use gradients for backgrounds. Use solid colors with subtle noise texture.",
+        "Status colors must be used as 'lights' (glow effects) or borders, not just text color.",
+        "Dark mode surfaces must have a 1px border of white/10 (border-white/10) to define edges."
+      ]
+    },
+    "layout": {
+      "grid_system": "The Control Room Grid",
+      "spacing": {
+        "container_padding": "p-4 md:p-8",
+        "card_padding": "p-6",
+        "gap": "gap-4 md:gap-6"
+      },
+      "breakpoints": {
+        "tablet": "md (768px) - Switch from stack to grid",
+        "desktop": "lg (1024px) - Full dashboard view"
+      }
+    },
+    "components": {
+      "buttons": {
+        "style": "h-12 px-6 font-bold uppercase tracking-wide rounded-md transition-all active:scale-95",
+        "variants": {
+          "primary": "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg",
+          "destructive": "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+          "outline": "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground"
+        }
+      },
+      "cards": {
+        "style": "rounded-xl border bg-card text-card-foreground shadow-sm overflow-hidden relative",
+        "special_feature": "Status Bar: A 4px colored line at the top of the card indicating machine status (Green/Yellow/Red)"
+      },
+      "inputs": {
+        "style": "h-12 bg-background border-input focus:ring-2 focus:ring-primary/20 text-lg"
+      }
+    },
+    "visual_enhancers": {
+      "textures": "Use a subtle SVG noise overlay on the dark background to reduce banding and add 'industrial grit'.",
+      "shadows": "shadow-xl for floating panels, shadow-sm for embedded cards.",
+      "borders": "1px solid borders are mandatory in dark mode for contrast."
+    },
+    "motion": {
+      "transitions": "transition-all duration-200 ease-out",
+      "micro_interactions": "Buttons press in (scale-95). Cards lift slightly on hover (hover:-translate-y-1).",
+      "loading": "Skeleton loaders for data. Spinning notched circle for actions."
+    },
+    "accessibility": {
+      "contrast": "Ensure 4.5:1 contrast ratio for all text.",
+      "touch_targets": "All interactive elements must be at least 44x44px.",
+      "focus_states": "Visible ring-2 ring-offset-2 ring-primary for keyboard navigation."
+    }
+  },
+  "assets": {
+    "images": {
+      "login_bg": {
+        "url": "https://images.unsplash.com/photo-1654703681116-3988648da2b6?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwzfHxpbmR1c3RyaWFsJTIwcmVjeWNsaW5nJTIwZmFjdG9yeSUyMGludGVyaW9yJTIwbW9kZXJuJTIwY2xlYW58ZW58MHx8fHwxNzY1NDgwOTYyfDA&ixlib=rb-4.1.0&q=85",
+        "alt": "Modern industrial recycling facility interior with blue containers",
+        "usage": "Full screen background for Login page with overlay"
+      },
+      "gate_truck": {
+        "url": "https://images.unsplash.com/photo-1695601510327-1553ba5f8bb4?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2Nzd8MHwxfHNlYXJjaHwzfHxpbmR1c3RyaWFsJTIwdHJ1Y2slMjB3ZWlnaGluZyUyMHNjYWxlJTIwZ2F0ZXxlbnwwfHx8fDE3NjU0ODA5NjR8MA&ixlib=rb-4.1.0&q=85",
+        "alt": "Red industrial truck",
+        "usage": "Header image or card image for Gatekeeper Dashboard"
+      }
+    },
+    "icons": {
+      "library": "lucide-react",
+      "recommended": [
+        "Activity (Status)",
+        "Truck (Arrival)",
+        "Scale (Weighing)",
+        "Timer (Processing)",
+        "AlertTriangle (Warning)",
+        "CheckCircle2 (Success)",
+        "Settings (Admin)",
+        "Users (Management)",
+        "Factory (Digesters)"
+      ]
+    }
+  },
+  "implementation_instructions": {
+    "general": [
+      "Use 'sonner' for all toast notifications.",
+      "Ensure 'data-testid' attributes are present on all interactive elements.",
+      "Implement a global ThemeToggle component in the navbar.",
+      "Use 'date-fns' for time formatting."
+    ],
+    "pages": {
+      "login": {
+        "layout": "Split screen or Centered Card on blurred background.",
+        "elements": "Role selector (Tabs), Username/Password, 'Enter Plant' button."
+      },
+      "operator_dashboard": {
+        "layout": "Grid of 4 Digester Cards.",
+        "card_content": "Digester ID (Header), Current Phase (Text), Timer (Huge Mono Font), Action Button (Start/Stop/Next Phase)."
+      },
+      "gate_dashboard": {
+        "layout": "Two columns: 'New Entry Form' (Left) and 'Recent Arrivals List' (Right).",
+        "form_fields": "License Plate (Big Input), Weight (Number), Driver Name."
+      },
+      "admin_dashboard": {
+        "layout": "Sidebar Navigation + Main Content Area.",
+        "widgets": "Production Chart (Recharts), Operator Efficiency Table, Maintenance Log."
+      }
+    },
+    "universal_guidelines": [
+      "Do not use gradients for text.",
+      "Do not center align the app container.",
+      "Use 'lucide-react' for icons.",
+      "Always use named exports for components.",
+      "Use 'sonner' for toasts."
+    ]
+  }
+}

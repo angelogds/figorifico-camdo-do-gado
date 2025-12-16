@@ -1,0 +1,208 @@
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@700;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    margin: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+    font-family: 'JetBrains Mono', source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+@layer base {
+    :root {
+        /* Light mode - White & Green Premium */
+        --background: 0 0% 100%;
+        --foreground: 142 70% 15%;
+        --card: 0 0% 100%;
+        --card-foreground: 142 70% 15%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 142 70% 15%;
+        --primary: 142 70% 25%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 142 30% 95%;
+        --secondary-foreground: 142 70% 20%;
+        --muted: 142 20% 96%;
+        --muted-foreground: 142 30% 45%;
+        --accent: 142 50% 92%;
+        --accent-foreground: 142 70% 20%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 142 20% 88%;
+        --input: 142 20% 88%;
+        --ring: 142 70% 25%;
+        --radius: 0.75rem;
+        --status-operational: 142 70% 45%;
+        --status-warning: 45 93% 47%;
+        --status-critical: 0 84% 60%;
+        --status-neutral: 142 20% 50%;
+    }
+    .dark {
+        /* Dark mode - Deep Green Premium */
+        --background: 142 50% 8%;
+        --foreground: 0 0% 98%;
+        --card: 142 40% 12%;
+        --card-foreground: 0 0% 98%;
+        --popover: 142 40% 12%;
+        --popover-foreground: 0 0% 98%;
+        --primary: 0 0% 98%;
+        --primary-foreground: 142 70% 15%;
+        --secondary: 142 40% 18%;
+        --secondary-foreground: 0 0% 98%;
+        --muted: 142 40% 18%;
+        --muted-foreground: 142 10% 65%;
+        --accent: 142 40% 20%;
+        --accent-foreground: 0 0% 98%;
+        --destructive: 0 62% 45%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 142 30% 22%;
+        --input: 142 30% 22%;
+        --ring: 142 50% 60%;
+        --status-operational: 142 70% 50%;
+        --status-warning: 45 93% 55%;
+        --status-critical: 0 84% 60%;
+        --status-neutral: 142 20% 50%;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Chivo', sans-serif;
+    }
+}
+
+/* Premium Green Gradient Background */
+.gradient-bg {
+    background: linear-gradient(135deg, 
+        hsl(142, 70%, 15%) 0%, 
+        hsl(142, 60%, 20%) 50%, 
+        hsl(142, 50%, 25%) 100%
+    );
+}
+
+.gradient-bg-light {
+    background: linear-gradient(135deg, 
+        hsl(142, 30%, 95%) 0%, 
+        hsl(0, 0%, 100%) 50%, 
+        hsl(142, 20%, 97%) 100%
+    );
+}
+
+/* Sidebar Gradient - Dark to Light */
+.sidebar-gradient {
+    background: linear-gradient(to right, 
+        hsl(142, 70%, 12%) 0%,
+        hsl(142, 60%, 15%) 20%,
+        hsl(142, 50%, 20%) 40%,
+        hsl(142, 40%, 25%) 60%,
+        hsl(142, 30%, 35%) 80%,
+        hsl(142, 20%, 45%) 100%
+    );
+}
+
+.sidebar-gradient-light {
+    background: linear-gradient(to right, 
+        hsl(142, 50%, 25%) 0%,
+        hsl(142, 45%, 30%) 20%,
+        hsl(142, 40%, 40%) 40%,
+        hsl(142, 35%, 50%) 60%,
+        hsl(142, 30%, 65%) 80%,
+        hsl(0, 0%, 98%) 100%
+    );
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}
+
+/* Custom Scrollbar - Green Theme */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+    background: hsl(142, 40%, 40%);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: hsl(142, 50%, 35%);
+}
+
+/* Premium Card with Border */
+.premium-card {
+    border: 2px solid hsl(142, 40%, 30%);
+    background: hsl(var(--card));
+    box-shadow: 0 4px 20px rgba(34, 139, 34, 0.1);
+}
+
+.dark .premium-card {
+    border: 2px solid hsl(142, 50%, 25%);
+    box-shadow: 0 4px 20px rgba(34, 139, 34, 0.3);
+}
+
+/* Status Colors - Green Theme */
+.status-livre {
+    background: linear-gradient(135deg, hsl(142, 70%, 45%), hsl(142, 70%, 55%));
+    border-color: hsl(142, 70%, 40%);
+}
+
+.status-triturando {
+    background: linear-gradient(135deg, hsl(45, 93%, 47%), hsl(45, 93%, 57%));
+    border-color: hsl(45, 93%, 42%);
+}
+
+.status-cozinhando {
+    background: linear-gradient(135deg, hsl(30, 90%, 50%), hsl(30, 90%, 60%));
+    border-color: hsl(30, 90%, 45%);
+}
+
+.status-alerta {
+    background: linear-gradient(135deg, hsl(0, 84%, 60%), hsl(0, 84%, 70%));
+    border-color: hsl(0, 84%, 55%);
+}
