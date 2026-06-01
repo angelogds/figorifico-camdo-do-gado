@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from pydantic import BaseModel, Field, ConfigDict, EmailStr, field_validator, model_validator
 from typing import Any, Dict, List, Optional, Literal
 from datetime import datetime, timezone, timedelta
 from enum import Enum
@@ -29,6 +29,7 @@ class UserRole(str, Enum):
     ADMIN = 'admin'
     ENCARREGADO = 'encarregado'
     MECANICO = 'mecanico'
+    PORTARIA = 'portaria'
 
 class UserBase(BaseModel):
     nome: str
@@ -149,6 +150,51 @@ class InspecaoCreate(BaseModel):
 class SetorCreate(BaseModel):
     nome: str
     descricao: Optional[str] = None
+
+class RefrigeracaoEquipamentoCreate(BaseModel):
+    codigo: str
+    nome: str
+    tipo: str = 'camara_fria'
+    setor: str = 'Refrigeração'
+    localizacao: Optional[str] = None
+    temperatura_minima: float
+    temperatura_maxima: float
+    temperatura_ideal: Optional[float] = None
+    tolerancia: float = Field(default=2.0, ge=0)
+    status: Literal['ativo', 'inativo', 'em_manutencao', 'em_observacao'] = 'ativo'
+    horarios_leitura: List[str] = []
+    observacoes: Optional[str] = None
+
+    @field_validator('codigo')
+    @classmethod
+    def normalize_codigo(cls, value):
+        value = value.strip().upper()
+        if not value: raise ValueError('Informe o código interno')
+        return value
+
+    @field_validator('horarios_leitura')
+    @classmethod
+    def validate_horarios(cls, values):
+        for value in values:
+            try: datetime.strptime(value, '%H:%M')
+            except ValueError as exc: raise ValueError(f'Horário inválido: {value}. Use HH:MM') from exc
+        return sorted(set(values))
+
+    @model_validator(mode='after')
+    def validate_limites(self):
+        if self.temperatura_minima > self.temperatura_maxima: raise ValueError('A temperatura mínima não pode ser maior que a máxima')
+        if self.temperatura_ideal is not None and not self.temperatura_minima <= self.temperatura_ideal <= self.temperatura_maxima: raise ValueError('A temperatura ideal deve estar entre os limites mínimo e máximo')
+        return self
+
+class RefrigeracaoLeituraCreate(BaseModel):
+    equipamento_id: str
+    temperatura: float
+    status_funcionamento: Literal['ligado', 'desligado', 'em_observacao', 'em_manutencao'] = 'ligado'
+    observacao: Optional[str] = None
+    leitura_inspecao: bool = False
+
+class RefrigeracaoAlertaResolver(BaseModel):
+    observacao: str
 
 
 def now():
@@ -383,15 +429,153 @@ async def dashboard(user:User=Depends(get_current_user)):
 async def relatorio_os(status:Optional[str]=None,setor:Optional[str]=None,prioridade:Optional[str]=None,user:User=Depends(get_current_user)): return await list_collection('ordens_servico',{k:v for k,v in {'status':status,'setor':setor,'prioridade':prioridade}.items() if v})
 
 def pdf_bytes(lines: List[str]):
-    safe=[line.replace('(','[').replace(')',']')[:105] for line in lines]; content='BT /F1 11 Tf 50 790 Td 0 -18 Td '.join(['']+[f'({line}) Tj' for line in safe])+' ET'; objects=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>','<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 5 0 R >> >> /Contents 4 0 R >>',f'<< /Length {len(content)} >>\nstream\n{content}\nendstream','<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>']; pdf='%PDF-1.4\n'; offsets=[]
-    for idx,obj in enumerate(objects,1): offsets.append(len(pdf)); pdf+=f'{idx} 0 obj\n{obj}\nendobj\n'
-    xref=len(pdf); pdf+='xref\n0 6\n0000000000 65535 f \n'+''.join(f'{o:010d} 00000 n \n' for o in offsets)+f'trailer << /Size 6 /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF'; return pdf.encode('latin-1','replace')
+    """Generate a dependency-free, paginated PDF used by legacy OS and refrigeration reports."""
+    pages = [lines[index:index + 48] for index in range(0, len(lines), 48)] or [[]]
+    objects = ['<< /Type /Catalog /Pages 2 0 R >>']
+    page_ids = [3 + index * 2 for index in range(len(pages))]
+    font_id = 3 + len(pages) * 2
+    objects.append(f'<< /Type /Pages /Kids [{" ".join(f"{page_id} 0 R" for page_id in page_ids)}] /Count {len(pages)} >>')
+    for page_number, page_lines in enumerate(pages, 1):
+        content_lines = [*page_lines, f'Pagina {page_number}/{len(pages)}']
+        escaped = [line.replace('\\', '\\\\').replace('(', '[').replace(')', ']')[:105] for line in content_lines]
+        content = 'BT /F1 10 Tf 45 800 Td ' + ' '.join(f'({line}) Tj 0 -15 Td' for line in escaped) + ' ET'
+        content_id = page_ids[page_number - 1] + 1
+        objects.extend([f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 {font_id} 0 R >> >> /Contents {content_id} 0 R >>', f'<< /Length {len(content)} >>\nstream\n{content}\nendstream'])
+    objects.append('<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>')
+    pdf = '%PDF-1.4\n'; offsets = []
+    for index, obj in enumerate(objects, 1):
+        offsets.append(len(pdf)); pdf += f'{index} 0 obj\n{obj}\nendobj\n'
+    xref = len(pdf); pdf += f'xref\n0 {len(objects) + 1}\n0000000000 65535 f \n' + ''.join(f'{offset:010d} 00000 n \n' for offset in offsets) + f'trailer << /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF'
+    return pdf.encode('latin-1', 'replace')
 @api_router.get('/ordens-servico/{entity_id}/pdf')
 async def ordem_pdf(entity_id:str,user:User=Depends(get_current_user)):
     os_doc=await db.ordens_servico.find_one({'id':entity_id},{'_id':0});
     if not os_doc: raise HTTPException(404,'OS não encontrada')
     lines=['CAMPO DO GADO - MANUTENCAO FRIGORIFICO','Controle de Manutencao Industrial e Frota',f"ORDEM DE SERVICO {os_doc['numero_os']}",f"Setor: {os_doc.get('setor','-')}",f"Status: {os_doc.get('status','-')}",f"Demanda: {os_doc.get('descricao','-')}",f"Diagnostico: {os_doc.get('diagnostico','-')}",f"Servico executado: {os_doc.get('servico_executado','-')}",f"Acao corretiva: {os_doc.get('acao_corretiva','-')}",f"Acao preventiva: {os_doc.get('acao_preventiva','-')}",f"Situacao final: {os_doc.get('situacao_final','-')}",f"Gerado em: {now().strftime('%d/%m/%Y %H:%M')} - Pagina 1/1"]
     return Response(pdf_bytes(lines),media_type='application/pdf',headers={'Content-Disposition':f"inline; filename={os_doc['numero_os']}.pdf"})
+
+# Controle de temperatura / câmaras frias
+REFRIGERACAO_TECNICOS = ('admin', 'encarregado')
+REFRIGERACAO_OPERACIONAIS = ('admin', 'encarregado', 'mecanico', 'portaria')
+
+def analisar_leitura_refrigeracao(equipamento: Dict[str, Any], leitura_atual: Dict[str, Any], leitura_anterior: Optional[Dict[str, Any]] = None):
+    nome, temperatura = equipamento['nome'], leitura_atual['temperatura']
+    minima, maxima, tolerancia = equipamento['temperatura_minima'], equipamento['temperatura_maxima'], equipamento.get('tolerancia', 0)
+    status = leitura_atual.get('status_funcionamento', 'ligado')
+    recomendacao = ' Verificar funcionamento, fechamento de porta, presença de produto e acionar o responsável técnico de refrigeração.'
+    if status == 'desligado': return {'classificacao':'equipamento_desligado','gerar_alerta':True,'tipo_alerta':'equipamento_desligado','severidade':'critica','mensagem':f'{nome} foi informado como desligado.'+recomendacao}
+    if status == 'em_manutencao': return {'classificacao':'equipamento_em_manutencao','gerar_alerta':True,'tipo_alerta':'equipamento_em_manutencao','severidade':'alta','mensagem':f'{nome} foi informado como em manutenção.'}
+    if temperatura > maxima: return {'classificacao':'critica_alta','gerar_alerta':True,'tipo_alerta':'temperatura_alta','severidade':'critica','mensagem':f'{nome} registrou {temperatura:g} °C, acima do limite máximo permitido de {maxima:g} °C.'+recomendacao}
+    if temperatura < minima: return {'classificacao':'critica_baixa','gerar_alerta':True,'tipo_alerta':'temperatura_baixa','severidade':'critica','mensagem':f'{nome} registrou {temperatura:g} °C, abaixo do limite mínimo permitido de {minima:g} °C.'+recomendacao}
+    if leitura_anterior and abs(temperatura-leitura_anterior['temperatura']) > max(tolerancia*2, 4): return {'classificacao':'variacao_brusca','gerar_alerta':True,'tipo_alerta':'variacao_brusca','severidade':'alta','mensagem':f'{nome} apresentou variação brusca de {abs(temperatura-leitura_anterior["temperatura"]):g} °C entre as duas últimas leituras.'}
+    if temperatura <= minima+tolerancia or temperatura >= maxima-tolerancia: return {'classificacao':'atencao','gerar_alerta':False,'tipo_alerta':None,'severidade':'media','mensagem':f'{nome} está próximo de um dos limites cadastrados.'}
+    return {'classificacao':'normal','gerar_alerta':False,'tipo_alerta':None,'severidade':'baixa','mensagem':f'{nome} está dentro da faixa esperada.'}
+
+async def refrigeracao_equipamento_or_404(entity_id):
+    document=await db.refrigeracao_equipamentos.find_one({'id':entity_id},{'_id':0})
+    if not document: raise HTTPException(404,'Equipamento de refrigeração não encontrado')
+    return document
+
+async def create_refrigeracao_alerta(equipamento,tipo_alerta,severidade,mensagem,leitura=None,slot_key=None):
+    if slot_key:
+        existing=await db.refrigeracao_alertas.find_one({'equipamento_id':equipamento['id'],'tipo_alerta':tipo_alerta,'slot_key':slot_key,'status':{'$ne':'resolvido'}},{'_id':0})
+        if existing: return existing
+    document={'id':str(uuid.uuid4()),'equipamento_id':equipamento['id'],'equipamento_nome':equipamento['nome'],'tipo_alerta':tipo_alerta,'severidade':severidade,'mensagem':mensagem,'temperatura_registrada':leitura.get('temperatura') if leitura else None,'limite_minimo':equipamento['temperatura_minima'],'limite_maximo':equipamento['temperatura_maxima'],'status':'aberto','leitura_id':leitura.get('id') if leitura else None,'slot_key':slot_key,'criado_em':now(),'created_at':now(),'reconhecido_por':None,'reconhecido_em':None,'resolvido_por':None,'resolvido_em':None,'observacao_resolucao':None,'os_id':None}
+    await db.refrigeracao_alertas.insert_one(document); return clean(document)
+
+async def refrigeracao_pendencias(equipamentos,reference=None):
+    reference=reference or now(); inicio=reference.replace(hour=0,minute=0,second=0,microsecond=0); pendencias=[]
+    for equipamento in equipamentos:
+        if equipamento.get('status')!='ativo': continue
+        for horario in equipamento.get('horarios_leitura',[]):
+            hora,minuto=map(int,horario.split(':')); previsto=inicio.replace(hour=hora,minute=minuto)
+            if reference < previsto+timedelta(minutes=30): continue
+            registrada=await db.refrigeracao_leituras.find_one({'equipamento_id':equipamento['id'],'data_leitura':{'$gte':previsto-timedelta(minutes=15),'$lte':previsto+timedelta(minutes=30)}})
+            if not registrada:
+                alerta=await create_refrigeracao_alerta(equipamento,'leitura_atrasada','alta',f'{equipamento["nome"]} possui leitura prevista para {horario} ainda não registrada.',slot_key=f'{equipamento["id"]}:{previsto.isoformat()}')
+                pendencias.append({'equipamento_id':equipamento['id'],'equipamento_nome':equipamento['nome'],'horario_previsto':horario,'alerta_id':alerta['id']})
+    return pendencias
+
+@api_router.post('/refrigeracao/equipamentos')
+async def add_refrigeracao_equipamento(data:RefrigeracaoEquipamentoCreate,user:User=Depends(require_roles(*REFRIGERACAO_TECNICOS))):
+    if await db.refrigeracao_equipamentos.find_one({'codigo':data.codigo}): raise HTTPException(400,'Código interno já cadastrado')
+    document={**data.model_dump(),'id':str(uuid.uuid4()),'cadastrado_por':user.nome,'cadastrado_por_id':user.id,'created_at':now(),'updated_at':now()}; await db.refrigeracao_equipamentos.insert_one(document); await audit(user,'cadastro','refrigeracao_equipamento',document['id'],novo=document['status'],observacao=document['codigo']); return clean(document)
+@api_router.get('/refrigeracao/equipamentos')
+async def refrigeracao_equipamentos(status:Optional[str]=None,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))): return await list_collection('refrigeracao_equipamentos',{'status':status} if status else {})
+@api_router.get('/refrigeracao/equipamentos/{entity_id}')
+async def refrigeracao_equipamento(entity_id:str,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))): return await refrigeracao_equipamento_or_404(entity_id)
+@api_router.put('/refrigeracao/equipamentos/{entity_id}')
+async def edit_refrigeracao_equipamento(entity_id:str,data:RefrigeracaoEquipamentoCreate,user:User=Depends(require_roles(*REFRIGERACAO_TECNICOS))):
+    existing=await refrigeracao_equipamento_or_404(entity_id)
+    if await db.refrigeracao_equipamentos.find_one({'codigo':data.codigo,'id':{'$ne':entity_id}}): raise HTTPException(400,'Código interno já cadastrado')
+    await db.refrigeracao_equipamentos.update_one({'id':entity_id},{'$set':{**data.model_dump(),'updated_at':now()}})
+    old=(existing['temperatura_minima'],existing['temperatura_maxima'],existing.get('temperatura_ideal')); new=(data.temperatura_minima,data.temperatura_maxima,data.temperatura_ideal)
+    if old!=new: await audit(user,'alteracao_limites','refrigeracao_equipamento',entity_id,anterior=str(old),novo=str(new))
+    return clean(await db.refrigeracao_equipamentos.find_one({'id':entity_id},{'_id':0}))
+@api_router.patch('/refrigeracao/equipamentos/{entity_id}/status')
+async def status_refrigeracao_equipamento(entity_id:str,data:StatusUpdate,user:User=Depends(require_roles(*REFRIGERACAO_TECNICOS))):
+    if data.status not in ('ativo','inativo','em_manutencao','em_observacao'): raise HTTPException(422,'Status inválido')
+    return await update_asset('refrigeracao_equipamentos','refrigeracao_equipamento',entity_id,{'status':data.status},user)
+
+@api_router.post('/refrigeracao/leituras')
+async def add_refrigeracao_leitura(data:RefrigeracaoLeituraCreate,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))):
+    equipamento=await refrigeracao_equipamento_or_404(data.equipamento_id)
+    if equipamento['status']=='inativo' and not data.leitura_inspecao: raise HTTPException(409,'Equipamento inativo. Confirme que esta é uma leitura de inspeção para continuar')
+    anterior=await db.refrigeracao_leituras.find_one({'equipamento_id':equipamento['id']},{'_id':0},sort=[('data_leitura',-1)])
+    leitura={**data.model_dump(exclude={'leitura_inspecao'}),'id':str(uuid.uuid4()),'equipamento_codigo':equipamento['codigo'],'equipamento_nome':equipamento['nome'],'unidade':'°C','responsavel_id':user.id,'responsavel_nome':user.nome,'responsavel_perfil':user.role.value,'data_leitura':now(),'created_at':now()}; analise=analisar_leitura_refrigeracao(equipamento,leitura,anterior); leitura.update({'classificacao':analise['classificacao'],'alerta_gerado':analise['gerar_alerta']}); await db.refrigeracao_leituras.insert_one(leitura); alerta=None
+    if analise['gerar_alerta']: alerta=await create_refrigeracao_alerta(equipamento,analise['tipo_alerta'],analise['severidade'],analise['mensagem'],leitura); await audit(user,'leitura_critica','refrigeracao_leitura',leitura['id'],novo=analise['classificacao'],observacao=analise['mensagem'])
+    return {'leitura':clean(leitura),'alerta':alerta,'mensagem':'Leitura registrada com sucesso.'}
+@api_router.get('/refrigeracao/leituras')
+async def refrigeracao_leituras(equipamento_id:Optional[str]=None,data_inicio:Optional[datetime]=None,data_fim:Optional[datetime]=None,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))):
+    query={'equipamento_id':equipamento_id} if equipamento_id else {}
+    if data_inicio or data_fim: query['data_leitura']={k:v for k,v in {'$gte':data_inicio,'$lte':data_fim}.items() if v}
+    return await list_collection('refrigeracao_leituras',query)
+@api_router.get('/refrigeracao/equipamentos/{entity_id}/leituras')
+async def refrigeracao_equipamento_leituras(entity_id:str,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))): await refrigeracao_equipamento_or_404(entity_id); return await list_collection('refrigeracao_leituras',{'equipamento_id':entity_id})
+@api_router.get('/refrigeracao/equipamentos/{entity_id}/historico')
+async def refrigeracao_historico(entity_id:str,data_inicio:Optional[datetime]=None,data_fim:Optional[datetime]=None,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))):
+    equipamento=await refrigeracao_equipamento_or_404(entity_id); query={'equipamento_id':entity_id}
+    if data_inicio or data_fim: query['data_leitura']={k:v for k,v in {'$gte':data_inicio,'$lte':data_fim}.items() if v}
+    return {'equipamento':equipamento,'leituras':await list_collection('refrigeracao_leituras',query),'alertas':await list_collection('refrigeracao_alertas',{'equipamento_id':entity_id})}
+
+@api_router.get('/refrigeracao/alertas')
+async def refrigeracao_alertas(status:Optional[str]=None,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))): return await list_collection('refrigeracao_alertas',{'status':status} if status else {})
+@api_router.patch('/refrigeracao/alertas/{entity_id}/reconhecer')
+async def reconhecer_refrigeracao_alerta(entity_id:str,user:User=Depends(require_roles('admin','encarregado','mecanico'))):
+    alerta=await db.refrigeracao_alertas.find_one({'id':entity_id})
+    if not alerta: raise HTTPException(404,'Alerta não encontrado')
+    await db.refrigeracao_alertas.update_one({'id':entity_id},{'$set':{'status':'reconhecido','reconhecido_por':user.nome,'reconhecido_por_id':user.id,'reconhecido_em':now()}}); await audit(user,'reconhecimento_alerta','refrigeracao_alerta',entity_id,alerta.get('status'),'reconhecido'); return clean(await db.refrigeracao_alertas.find_one({'id':entity_id},{'_id':0}))
+@api_router.patch('/refrigeracao/alertas/{entity_id}/resolver')
+async def resolver_refrigeracao_alerta(entity_id:str,data:RefrigeracaoAlertaResolver,user:User=Depends(require_roles('admin','encarregado','mecanico'))):
+    alerta=await db.refrigeracao_alertas.find_one({'id':entity_id})
+    if not alerta: raise HTTPException(404,'Alerta não encontrado')
+    await db.refrigeracao_alertas.update_one({'id':entity_id},{'$set':{'status':'resolvido','resolvido_por':user.nome,'resolvido_por_id':user.id,'resolvido_em':now(),'observacao_resolucao':data.observacao}}); await audit(user,'resolucao_alerta','refrigeracao_alerta',entity_id,alerta.get('status'),'resolvido',data.observacao); return clean(await db.refrigeracao_alertas.find_one({'id':entity_id},{'_id':0}))
+@api_router.post('/refrigeracao/alertas/{entity_id}/gerar-os')
+async def gerar_os_refrigeracao_alerta(entity_id:str,user:User=Depends(require_roles('admin','encarregado','mecanico'))):
+    alerta=await db.refrigeracao_alertas.find_one({'id':entity_id},{'_id':0})
+    if not alerta: raise HTTPException(404,'Alerta não encontrado')
+    if alerta.get('os_id'): raise HTTPException(409,'Este alerta já possui uma OS vinculada')
+    leitura=await db.refrigeracao_leituras.find_one({'id':alerta.get('leitura_id')},{'_id':0}) or {}; momento=leitura.get('data_leitura',alerta['criado_em']).strftime('%d/%m/%Y %H:%M')
+    descricao=f"Alerta crítico no controle de refrigeração.\n\nEquipamento: {alerta['equipamento_nome']}\nTemperatura registrada: {alerta.get('temperatura_registrada','-')} °C\nLimite permitido: entre {alerta['limite_minimo']} °C e {alerta['limite_maximo']} °C\nTipo de alerta: {alerta['tipo_alerta']}\nData/hora da leitura: {momento}\nResponsável pela leitura: {leitura.get('responsavel_nome','-')}\n\nSolicita-se verificação do sistema de refrigeração, conferência de funcionamento, vedação, abertura de porta, presença de produto e demais componentes técnicos."
+    os_doc=await create_os({'origem':'equipamento','equipamento_id':alerta['equipamento_id'],'setor':'Refrigeração','tipo_os':'corretiva','categoria':'refrigeracao','prioridade':'critica' if alerta['severidade']=='critica' else 'alta','descricao':descricao,'anexos':[],'alerta_refrigeracao_id':alerta['id']},user); await db.refrigeracao_alertas.update_one({'id':entity_id},{'$set':{'os_id':os_doc['id'],'os_numero':os_doc['numero_os']}}); await audit(user,'geracao_os_alerta','refrigeracao_alerta',entity_id,novo=os_doc['numero_os']); return os_doc
+
+@api_router.get('/refrigeracao/dashboard')
+async def refrigeracao_dashboard(user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))):
+    inicio=now().replace(hour=0,minute=0,second=0,microsecond=0); equipamentos=await list_collection('refrigeracao_equipamentos'); pendencias=await refrigeracao_pendencias(equipamentos); itens=[]; situacoes={'normal':0,'atencao':0,'critico':0,'sem_leitura':0}; ultima_geral=None
+    for equipamento in equipamentos:
+        ultima=await db.refrigeracao_leituras.find_one({'equipamento_id':equipamento['id']},{'_id':0},sort=[('data_leitura',-1)]); classificacao=ultima.get('classificacao') if ultima else 'sem_leitura'; grupo='critico' if classificacao in ('critica_alta','critica_baixa','equipamento_desligado','variacao_brusca','equipamento_em_manutencao') else classificacao; situacoes[grupo if grupo in situacoes else 'atencao']+=1
+        if ultima and (not ultima_geral or ultima['data_leitura']>ultima_geral['data_leitura']): ultima_geral=ultima
+        itens.append({'equipamento':equipamento,'ultima_leitura':ultima,'situacao':classificacao})
+    return {'total_equipamentos':len(equipamentos),'leituras_hoje':await db.refrigeracao_leituras.count_documents({'data_leitura':{'$gte':inicio}}),'leituras_pendentes':len(pendencias),'pendencias':pendencias,'alertas_abertos':await db.refrigeracao_alertas.count_documents({'status':{'$ne':'resolvido'}}),'equipamentos_normais':situacoes['normal'],'equipamentos_atencao':situacoes['atencao'],'equipamentos_criticos':situacoes['critico'],'equipamentos_sem_leitura':situacoes['sem_leitura'],'ultima_leitura':ultima_geral,'equipamentos':itens}
+
+@api_router.get('/refrigeracao/relatorios/pdf')
+async def refrigeracao_relatorio_pdf(data_inicio:datetime,data_fim:datetime,equipamento_id:Optional[str]=None,user:User=Depends(require_roles(*REFRIGERACAO_OPERACIONAIS))):
+    if data_inicio>data_fim: raise HTTPException(422,'A data inicial deve ser anterior à data final')
+    query={'data_leitura':{'$gte':data_inicio,'$lte':data_fim}}; alertas_query={'criado_em':{'$gte':data_inicio,'$lte':data_fim}}
+    if equipamento_id: query['equipamento_id']=equipamento_id; alertas_query['equipamento_id']=equipamento_id
+    leituras=await list_collection('refrigeracao_leituras',query); alertas=await list_collection('refrigeracao_alertas',alertas_query); total=len({i['equipamento_id'] for i in leituras})
+    lines=['CAMPO DO GADO','MANUTENCAO INDUSTRIAL / CONTROLE DE REFRIGERACAO','RELATORIO DE CONTROLE DE TEMPERATURA',f'Periodo: {data_inicio.strftime("%d/%m/%Y")} a {data_fim.strftime("%d/%m/%Y")}',f'Gerado em: {now().strftime("%d/%m/%Y %H:%M")} por {user.nome}','',f'Resumo: {total} equipamentos | {len(leituras)} leituras | {sum(i["classificacao"]=="normal" for i in leituras)} normais | {sum(i["classificacao"]=="atencao" for i in leituras)} atencao | {sum(i["alerta_gerado"] for i in leituras)} criticas',f'Alertas: {sum(i["status"]!="resolvido" for i in alertas)} abertos | {sum(i["status"]=="resolvido" for i in alertas)} resolvidos','','LEITURAS - DATA HORA | EQUIPAMENTO | TEMP | CLASSIFICACAO | RESPONSAVEL']+[f'{i["data_leitura"].strftime("%d/%m/%Y %H:%M")} | {i["equipamento_nome"]} | {i["temperatura"]:g} C | {i["classificacao"]} | {i["responsavel_nome"]} | {i.get("observacao") or "-"}' for i in leituras]+['','ALERTAS - EQUIPAMENTO | TIPO | SEVERIDADE | STATUS | PROVIDENCIA']+[f'{a["equipamento_nome"]} | {a["tipo_alerta"]} | {a["severidade"]} | {a["status"]} | {a.get("observacao_resolucao") or "-"}' for a in alertas]+['','Manutencao Campo do Gado | Controle de Refrigeracao | Pagina 1/1','Assinatura do responsavel: ________________________________________']
+    return Response(pdf_bytes(lines),media_type='application/pdf',headers={'Content-Disposition':'inline; filename=relatorio-refrigeracao.pdf'})
 
 app.include_router(api_router)
 app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get('CORS_ORIGINS','*').split(','), allow_methods=['*'], allow_headers=['*'])
