@@ -19,15 +19,17 @@ Crie **2 services** no mesmo projeto Railway (um para backend e outro para front
 
 ### 2) Frontend service
 
-Há duas opções suportadas:
+Este repositório está configurado para fazer o deploy do frontend **pela raiz do repositório**:
 
-- **Deploy pela raiz do repositório (mais simples):** deixe `Root Directory` vazio. O `package.json` da raiz encaminha instalação, build e start para `frontend/`.
-- **Deploy pelo Dockerfile do frontend:** configure `Root Directory` como `frontend`. O Railway usará o Dockerfile já incluso em `frontend/Dockerfile`.
+- deixe `Root Directory` vazio no Railway;
+- mantenha o builder Nixpacks configurado pelo arquivo `railway.json` da raiz;
+- não configure comandos manuais diferentes dos comandos declarados em `railway.json`;
+- o `package.json` da raiz encaminha instalação, build e start para `frontend/`.
 
 Variables:
 - `REACT_APP_BACKEND_URL` = URL pública do backend (ex: https://seu-backend.up.railway.app)
 
-> Se o frontend for iniciado pela raiz sem o `package.json` da raiz, o Railway executará o npm em `/app` e falhará com `Could not read package.json`. Não configure um Start Command manual diferente de `npm start` para a opção de deploy pela raiz.
+> Não misture esta configuração com `Root Directory = frontend`. O deploy pela raiz precisa receber a pasta `frontend/` completa e versionada, incluindo `frontend/package.json`; caso contrário, o npm falhará ao procurar `/app/frontend/package.json`.
 
 ## Seed (criar usuários iniciais)
 No Railway, rode um **One-off Command** no backend (ou localmente com env vars setadas):
