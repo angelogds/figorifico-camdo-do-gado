@@ -44,30 +44,30 @@ code {
         --status-neutral: 0 8% 50%;
     }
     .dark {
-        /* Dark mode - deep red alternative */
-        --background: 0 36% 9%;
-        --foreground: 0 0% 98%;
-        --card: 0 32% 13%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 32% 13%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 35% 16%;
-        --secondary: 0 30% 19%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 24% 19%;
-        --muted-foreground: 0 12% 68%;
-        --accent: 48 88% 48%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62% 45%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 26% 24%;
-        --input: 0 26% 24%;
-        --ring: 48 96% 53%;
-        --status-operational: 142 70% 50%;
-        --status-warning: 45 93% 55%;
+        /* Neutral mode - light gray surfaces without the previous brown tint */
+        --background: 210 20% 98%;
+        --foreground: 215 28% 17%;
+        --card: 210 20% 96%;
+        --card-foreground: 215 28% 17%;
+        --popover: 210 20% 96%;
+        --popover-foreground: 215 28% 17%;
+        --primary: 0 72% 42%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 210 16% 93%;
+        --secondary-foreground: 215 28% 17%;
+        --muted: 210 16% 93%;
+        --muted-foreground: 215 16% 47%;
+        --accent: 48 96% 89%;
+        --accent-foreground: 28 80% 26%;
+        --destructive: 0 84% 60%;
+        --destructive-foreground: 0 0% 100%;
+        --border: 214 16% 82%;
+        --input: 214 16% 82%;
+        --ring: 0 72% 42%;
+        --status-operational: 142 70% 45%;
+        --status-warning: 45 93% 47%;
         --status-critical: 0 84% 60%;
-        --status-neutral: 0 8% 50%;
+        --status-neutral: 215 9% 46%;
     }
 }
 
