@@ -35,10 +35,10 @@ Variables:
 No Railway, rode um **One-off Command** no backend (ou localmente com env vars setadas):
 
 ```bash
-python ../create_users.py
+python ../scripts/create_users.py
 ```
 
-> Alternativa: rode o script a partir da raiz do repo. Ele tenta achar `backend/.env` também.
+> Alternativa: a partir da raiz do repositório, rode `python scripts/create_users.py`.
 
 ## Observações
 - O frontend usa `REACT_APP_BACKEND_URL` e monta a API em `{BACKEND_URL}/api`.
