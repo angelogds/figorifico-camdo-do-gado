@@ -168,6 +168,36 @@ def verify_password(password: str, hashed: str):
 def create_token(user_id: str, role: str):
     return jwt.encode({'sub': user_id, 'role': role, 'exp': now() + timedelta(hours=24)}, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+async def sync_admin_user():
+    """Create or update the Railway-configured administrator account."""
+    email = os.environ.get('ADMIN_EMAIL', '').strip().lower()
+    password = os.environ.get('ADMIN_PASSWORD', '')
+    name = os.environ.get('ADMIN_NAME', 'Administrador').strip() or 'Administrador'
+
+    if not email and not password:
+        return
+    if not email or not password:
+        raise RuntimeError('Configure ADMIN_EMAIL e ADMIN_PASSWORD em conjunto')
+
+    admin = User(nome=name, email=email, role=UserRole.ADMIN)
+    await db.users.update_one(
+        {'email': admin.email},
+        {
+            '$set': {
+                'nome': admin.nome,
+                'email': admin.email,
+                'role': admin.role.value,
+                'senha_hash': hash_password(password),
+            },
+            '$setOnInsert': {
+                'id': admin.id,
+                'created_at': admin.created_at,
+            },
+        },
+        upsert=True,
+    )
+    print(f'Administrador configurado por variável de ambiente: {admin.email}')
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)) -> User:
     try:
         payload = jwt.decode(credentials.credentials, JWT_SECRET, algorithms=[JWT_ALGORITHM])
@@ -365,5 +395,7 @@ async def ordem_pdf(entity_id:str,user:User=Depends(get_current_user)):
 
 app.include_router(api_router)
 app.add_middleware(CORSMiddleware, allow_credentials=True, allow_origins=os.environ.get('CORS_ORIGINS','*').split(','), allow_methods=['*'], allow_headers=['*'])
+@app.on_event('startup')
+async def startup(): await sync_admin_user()
 @app.on_event('shutdown')
 async def shutdown(): client.close()

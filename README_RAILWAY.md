@@ -16,6 +16,11 @@ Crie **2 services** no mesmo projeto Railway (um para backend e outro para front
   - `DB_NAME` = nome do banco
   - `JWT_SECRET` = segredo forte (obrigatório em produção)
   - `CORS_ORIGINS` = URL do frontend (ex: https://seu-frontend.up.railway.app)
+  - `ADMIN_EMAIL` = e-mail usado para entrar como administrador
+  - `ADMIN_PASSWORD` = senha do administrador
+  - `ADMIN_NAME` = nome exibido para o administrador (opcional; padrão: `Administrador`)
+
+> Configure `ADMIN_EMAIL` e `ADMIN_PASSWORD` em conjunto. Ao iniciar, o backend cria o administrador automaticamente ou atualiza sua senha caso ele já exista. Assim, uma alteração da senha nas Variables do Railway passa a valer após o redeploy do backend.
 
 ### 2) Frontend service
 
@@ -31,8 +36,10 @@ Variables:
 
 > Não misture esta configuração com `Root Directory = frontend`. O comando versionado em `railway.json` inicia o servidor estático diretamente, sem executar npm no runtime, e evita o loop de reinicialização causado por `Could not read package.json: /app/package.json`.
 
-## Seed (criar usuários iniciais)
-No Railway, rode um **One-off Command** no backend (ou localmente com env vars setadas):
+## Seed opcional (criar usuários de exemplo)
+O administrador configurado por `ADMIN_EMAIL` e `ADMIN_PASSWORD` é criado automaticamente na inicialização do backend. Portanto, não é necessário rodar seed para conseguir entrar no sistema.
+
+Se também quiser criar usuários de exemplo, rode um **One-off Command** no backend (ou localmente com env vars setadas):
 
 ```bash
 python ../scripts/create_users.py
