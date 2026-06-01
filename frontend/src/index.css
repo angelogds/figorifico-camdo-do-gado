@@ -17,57 +17,57 @@ code {
 
 @layer base {
     :root {
-        /* Light mode - White & Green Premium */
+        /* Light mode - Campo do Gado red, white and yellow identity */
         --background: 0 0% 100%;
-        --foreground: 142 70% 15%;
+        --foreground: 0 35% 16%;
         --card: 0 0% 100%;
-        --card-foreground: 142 70% 15%;
+        --card-foreground: 0 35% 16%;
         --popover: 0 0% 100%;
-        --popover-foreground: 142 70% 15%;
-        --primary: 142 70% 25%;
+        --popover-foreground: 0 35% 16%;
+        --primary: 0 72% 42%;
         --primary-foreground: 0 0% 100%;
-        --secondary: 142 30% 95%;
-        --secondary-foreground: 142 70% 20%;
-        --muted: 142 20% 96%;
-        --muted-foreground: 142 30% 45%;
-        --accent: 142 50% 92%;
-        --accent-foreground: 142 70% 20%;
+        --secondary: 0 55% 96%;
+        --secondary-foreground: 0 72% 32%;
+        --muted: 0 25% 97%;
+        --muted-foreground: 0 12% 43%;
+        --accent: 48 96% 89%;
+        --accent-foreground: 28 80% 26%;
         --destructive: 0 84% 60%;
         --destructive-foreground: 0 0% 100%;
-        --border: 142 20% 88%;
-        --input: 142 20% 88%;
-        --ring: 142 70% 25%;
+        --border: 0 28% 89%;
+        --input: 0 28% 89%;
+        --ring: 0 72% 42%;
         --radius: 0.75rem;
         --status-operational: 142 70% 45%;
         --status-warning: 45 93% 47%;
         --status-critical: 0 84% 60%;
-        --status-neutral: 142 20% 50%;
+        --status-neutral: 0 8% 50%;
     }
     .dark {
-        /* Dark mode - Deep Green Premium */
-        --background: 142 50% 8%;
+        /* Dark mode - deep red alternative */
+        --background: 0 36% 9%;
         --foreground: 0 0% 98%;
-        --card: 142 40% 12%;
+        --card: 0 32% 13%;
         --card-foreground: 0 0% 98%;
-        --popover: 142 40% 12%;
+        --popover: 0 32% 13%;
         --popover-foreground: 0 0% 98%;
         --primary: 0 0% 98%;
-        --primary-foreground: 142 70% 15%;
-        --secondary: 142 40% 18%;
+        --primary-foreground: 0 35% 16%;
+        --secondary: 0 30% 19%;
         --secondary-foreground: 0 0% 98%;
-        --muted: 142 40% 18%;
-        --muted-foreground: 142 10% 65%;
-        --accent: 142 40% 20%;
+        --muted: 0 24% 19%;
+        --muted-foreground: 0 12% 68%;
+        --accent: 48 88% 48%;
         --accent-foreground: 0 0% 98%;
         --destructive: 0 62% 45%;
         --destructive-foreground: 0 0% 98%;
-        --border: 142 30% 22%;
-        --input: 142 30% 22%;
-        --ring: 142 50% 60%;
+        --border: 0 26% 24%;
+        --input: 0 26% 24%;
+        --ring: 48 96% 53%;
         --status-operational: 142 70% 50%;
         --status-warning: 45 93% 55%;
         --status-critical: 0 84% 60%;
-        --status-neutral: 142 20% 50%;
+        --status-neutral: 0 8% 50%;
     }
 }
 
@@ -83,42 +83,42 @@ code {
     }
 }
 
-/* Premium Green Gradient Background */
+/* Campo do Gado red gradient backgrounds */
 .gradient-bg {
-    background: linear-gradient(135deg, 
-        hsl(142, 70%, 15%) 0%, 
-        hsl(142, 60%, 20%) 50%, 
-        hsl(142, 50%, 25%) 100%
+    background: linear-gradient(135deg,
+        hsl(0, 72%, 28%) 0%,
+        hsl(0, 70%, 35%) 50%,
+        hsl(0, 68%, 30%) 100%
     );
 }
 
 .gradient-bg-light {
-    background: linear-gradient(135deg, 
-        hsl(142, 30%, 95%) 0%, 
-        hsl(0, 0%, 100%) 50%, 
-        hsl(142, 20%, 97%) 100%
+    background: linear-gradient(135deg,
+        hsl(0, 55%, 96%) 0%,
+        hsl(0, 0%, 100%) 50%,
+        hsl(48, 92%, 97%) 100%
     );
 }
 
 /* Sidebar Gradient - Dark to Light */
 .sidebar-gradient {
-    background: linear-gradient(to right, 
-        hsl(142, 70%, 12%) 0%,
-        hsl(142, 60%, 15%) 20%,
-        hsl(142, 50%, 20%) 40%,
-        hsl(142, 40%, 25%) 60%,
-        hsl(142, 30%, 35%) 80%,
-        hsl(142, 20%, 45%) 100%
+    background: linear-gradient(to right,
+        hsl(0, 72%, 24%) 0%,
+        hsl(0, 72%, 29%) 20%,
+        hsl(0, 70%, 35%) 40%,
+        hsl(0, 66%, 41%) 60%,
+        hsl(0, 58%, 52%) 80%,
+        hsl(0, 48%, 64%) 100%
     );
 }
 
 .sidebar-gradient-light {
-    background: linear-gradient(to right, 
-        hsl(142, 50%, 25%) 0%,
-        hsl(142, 45%, 30%) 20%,
-        hsl(142, 40%, 40%) 40%,
-        hsl(142, 35%, 50%) 60%,
-        hsl(142, 30%, 65%) 80%,
+    background: linear-gradient(to right,
+        hsl(0, 68%, 30%) 0%,
+        hsl(0, 68%, 38%) 20%,
+        hsl(0, 62%, 48%) 40%,
+        hsl(0, 54%, 58%) 60%,
+        hsl(0, 44%, 72%) 80%,
         hsl(0, 0%, 98%) 100%
     );
 }
@@ -155,7 +155,7 @@ code {
     }
 }
 
-/* Custom Scrollbar - Green Theme */
+/* Custom scrollbar - institutional red */
 ::-webkit-scrollbar {
     width: 10px;
     height: 10px;
@@ -166,27 +166,27 @@ code {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: hsl(142, 40%, 40%);
+    background: hsl(0, 62%, 48%);
     border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: hsl(142, 50%, 35%);
+    background: hsl(0, 68%, 38%);
 }
 
 /* Premium Card with Border */
 .premium-card {
-    border: 2px solid hsl(142, 40%, 30%);
+    border: 2px solid hsl(0, 62%, 34%);
     background: hsl(var(--card));
-    box-shadow: 0 4px 20px rgba(34, 139, 34, 0.1);
+    box-shadow: 0 4px 20px rgba(185, 28, 28, 0.10);
 }
 
 .dark .premium-card {
-    border: 2px solid hsl(142, 50%, 25%);
-    box-shadow: 0 4px 20px rgba(34, 139, 34, 0.3);
+    border: 2px solid hsl(0, 68%, 30%);
+    box-shadow: 0 4px 20px rgba(185, 28, 28, 0.24);
 }
 
-/* Status Colors - Green Theme */
+/* Status colors - semantic operational palette */
 .status-livre {
     background: linear-gradient(135deg, hsl(142, 70%, 45%), hsl(142, 70%, 55%));
     border-color: hsl(142, 70%, 40%);
