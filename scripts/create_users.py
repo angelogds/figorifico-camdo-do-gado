@@ -5,7 +5,7 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 from backend.server import db, hash_password
 
 USERS = [
-    ('Administrador Campo do Gado', 'admin@campodogado.com.br', 'admin123', 'admin'),
+    ('Administrador Angelo', 'angelo@campodogado.local', 'angelo@123', 'admin'),
     ('Encarregado de Manutenção', 'encarregado@campodogado.com.br', 'encarregado123', 'encarregado'),
     ('Mecânico Campo do Gado', 'mecanico@campodogado.com.br', 'mecanico123', 'mecanico'),
 ]
