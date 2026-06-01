@@ -1,0 +1,13 @@
+{
+  "name": "frigorifico-campo-do-gado",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "postinstall": "npm install --prefix frontend --legacy-peer-deps",
+    "build": "npm run build --prefix frontend",
+    "start": "npm run start:prod --prefix frontend"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
