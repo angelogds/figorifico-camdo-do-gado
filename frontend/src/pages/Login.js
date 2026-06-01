@@ -7,7 +7,7 @@ import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ShieldCheck } from 'lucide-react';
 
 export const Login = () => {
   const { login } = useAuth();
@@ -27,14 +27,7 @@ export const Login = () => {
       const user = await login(loginData.email, loginData.senha);
       toast.success(`Bem-vindo, ${user.nome}!`);
       
-      // Redirect based on role
-      if (user.role === 'portaria') {
-        navigate('/portaria');
-      } else if (user.role === 'operador') {
-        navigate('/operador');
-      } else if (user.role === 'admin') {
-        navigate('/admin');
-      }
+      navigate('/');
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Erro ao fazer login');
     } finally {
@@ -47,17 +40,13 @@ export const Login = () => {
       <Card className="w-full max-w-md relative z-10 premium-card shadow-2xl">
         <CardHeader className="space-y-4">
           <div className="flex justify-center">
-            <img 
-              src="https://customer-assets.emergentagent.com/job_digestionmgr/artifacts/po8v1ylk_Copilot_20250806_195254.png" 
-              alt="Campo do Gado Logo" 
-              className="h-32 w-auto object-contain"
-            />
+            <div className="login-logo"><ShieldCheck size={42}/><span>CG</span></div>
           </div>
           <CardTitle className="text-2xl font-black tracking-tight text-center">
-            Sistema de Controle Industrial
+            Manutenção Frigorífico Campo do Gado
           </CardTitle>
           <CardDescription className="text-center text-muted-foreground font-medium">
-            Campo do Gado - Gestão de Reciclagem
+            Controle de Manutenção Industrial e Frota
           </CardDescription>
         </CardHeader>
         
